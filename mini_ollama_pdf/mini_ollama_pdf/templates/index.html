@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+<title>Asistente de IA para consultar documentos</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    background:#f5f6fa;
+    max-width:1100px;
+    margin:auto;
+    padding:30px;
+}
+
+h1{
+    text-align:center;
+}
+
+.layout{
+    display:flex;
+    gap:20px;
+}
+
+.chat{
+    flex:2;
+}
+
+.pipeline{
+    flex:1;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    margin-bottom:20px;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+}
+
+#chatbox{
+    height:400px;
+    overflow:auto;
+    border:1px solid #ddd;
+    padding:10px;
+}
+
+.message{
+    padding:10px;
+    margin:5px;
+    border-radius:8px;
+    max-width:70%;
+}
+
+.user{
+    background:#007bff;
+    color:white;
+    margin-left:auto;
+}
+
+.bot{
+    background:#e9ecef;
+}
+
+.pipeline-step{
+    padding:12px;
+    margin:10px 0;
+    border-radius:8px;
+    background:#f1f3f5;
+    transition:all 0.4s ease;
+}
+
+.pipeline-step.active{
+    background:#339af0;
+    color:white;
+    transform:scale(1.05);
+}
+
+.arrow{
+    text-align:center;
+    font-size:20px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Asistente de IA para consultar documentos</h1>
+
+<div class="card">
+
+<h3>Cargar PDF</h3>
+
+<input type="file" id="pdf">
+<button onclick="uploadPDF()">Procesar</button>
+
+<p id="status"></p>
+
+</div>
+
+<div class="layout">
+
+<div class="chat">
+
+<div class="card">
+
+<h3>Chat con el documento</h3>
+
+<div id="chatbox"></div>
+
+<div style="display:flex; gap:10px; margin-top:10px">
+
+<textarea id="msg" rows="2" style="flex:1"></textarea>
+<button onclick="send()">Enviar</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="pipeline">
+
+<div class="card">
+
+<h3>Pipeline RAG</h3>
+
+<div id="pipeline">
+
+<div class="pipeline-step">Pregunta del usuario</div>
+<div class="arrow">↓</div>
+
+<div class="pipeline-step">Embedding de la pregunta</div>
+<div class="arrow">↓</div>
+
+<div class="pipeline-step">Búsqueda en el documento</div>
+<div class="arrow">↓</div>
+
+<div class="pipeline-step">Construcción del contexto</div>
+<div class="arrow">↓</div>
+
+<div class="pipeline-step">Modelo de lenguaje</div>
+<div class="arrow">↓</div>
+
+<div class="pipeline-step">Respuesta generada</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+
+async function uploadPDF(){
+
+    let file=document.getElementById("pdf").files[0]
+
+    let form=new FormData()
+
+    form.append("pdf_file",file)
+
+    document.getElementById("status").innerText="Procesando..."
+
+    let r=await fetch("/upload",{method:"POST",body:form})
+
+    let data=await r.json()
+
+    document.getElementById("status").innerText=
+    "PDF cargado con "+data.chunks+" fragmentos"
+
+}
+
+function addMessage(text,cls){
+
+    let div=document.createElement("div")
+
+    div.className="message "+cls
+
+    div.innerText=text
+
+    document.getElementById("chatbox").appendChild(div)
+
+    document.getElementById("chatbox").scrollTop=99999
+
+}
+
+
+function animatePipeline(){
+
+    let steps=document.querySelectorAll(".pipeline-step")
+
+    steps.forEach(s=>s.classList.remove("active"))
+
+    steps.forEach((step,i)=>{
+
+        setTimeout(()=>{
+
+            step.classList.add("active")
+
+        },i*400)
+
+    })
+
+}
+
+
+async function send(){
+
+    let input=document.getElementById("msg")
+
+    let msg=input.value.trim()
+
+    if(msg==="") return
+
+    addMessage(msg,"user")
+
+    input.value=""
+
+    animatePipeline()
+
+    let r=await fetch("/chat",{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({message:msg})
+
+    })
+
+    let data=await r.json()
+
+    addMessage(
+        data.answer+"\n\n⏱ "+data.time+"s",
+        "bot"
+    )
+
+}
+
+</script>
+
+</body>
+</html>
