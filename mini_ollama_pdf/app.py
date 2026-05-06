@@ -55,7 +55,7 @@ def split_chunks(text, size=2000):
         if chunk:
             chunks.append(chunk)
 
-    return chunks[:10]
+    return chunks[:5]
 
 
 # ------------------------------------------------
